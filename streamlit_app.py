@@ -5,6 +5,7 @@ from pathlib import Path
 import psycopg2
 import requests
 from bs4 import BeautifulSoup
+import re
 
 class RealEstateListing:
     def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url):
