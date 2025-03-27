@@ -90,18 +90,20 @@ def get_gdp_data():
     listing = RealEstateListing(1000000, 120, 4, 20, 500, 1990, 950000, "Villa", "Norrmalm", "Stockholm", "1,000,000 SEK", "http://example.com")
     listing.store_in_db(connection)
     return listing
- 
+
+def fetch_all_rows(connection):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM real_estate_listings")
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return pd.DataFrame(rows, columns=columns)
 
 # -----------------------------------------------------------------------------
 # Draw the actual page
 
 # Set the title that appears at the top of the page.
 '''
-# :earth_americas: GDP dashboard
-
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
+# :earth_americas: GDP dashboard 
 '''
 
 # Add some spacing
@@ -117,8 +119,20 @@ if st.button('Save CSV'):
 ''
 ''
 
-st.header(f'GDP in 2022', divider='gray')
+st.header(f'Current listings in Database', divider='gray')
 
 ''
+
+connection = connect_to_db()
+
+if connection:
+    if st.button("Fetch All Listings"):
+        df = fetch_all_rows(connection)
+        if not df.empty:
+            st.write("Top 5 Listings:")
+            st.dataframe(df.head(5))
+        else:
+            st.write("No listings found.")
+    connection.close()
 
 cols = st.columns(4)
