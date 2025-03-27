@@ -89,7 +89,7 @@ def get_gdp_data():
     # Create dummy listing
     listing = RealEstateListing(1000000, 120, 4, 20, 500, 1990, 950000, "Villa", "Norrmalm", "Stockholm", "1,000,000 SEK", "http://example.com")
     listing.store_in_db(connection)
-    return gdp_df
+    return listing
  
 
 # -----------------------------------------------------------------------------
