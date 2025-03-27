@@ -2,6 +2,71 @@ import streamlit as st
 import pandas as pd
 import math
 from pathlib import Path
+import psycopg2
+
+class RealEstateListing:
+    def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url):
+        self.booli_price = booli_price
+        self.boarea = boarea
+        self.rum = rum
+        self.biarea = biarea
+        self.tomtstorlek = tomtstorlek
+        self.byggar = byggar
+        self.utgangspris = utgangspris
+        self.bostadstyp = bostadstyp
+        self.omrade = omrade
+        self.stad = stad
+        self.price_text = price_text
+        self.url = url
+
+    def __repr__(self):
+        return (f"RealEstateListing(booli_price={self.booli_price}, boarea={self.boarea}, rum={self.rum}, "
+                f"biarea={self.biarea}, tomtstorlek={self.tomtstorlek}, byggar={self.byggar}, "
+                f"utgangspris={self.utgangspris}, bostadstyp={self.bostadstyp}, omrade={self.omrade}, "
+                f"stad={self.stad}, price_text={self.price_text}, url={self.url})")
+
+    def store_in_db(self, connection):
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (self.booli_price, self.boarea, self.rum, self.biarea, self.tomtstorlek, self.byggar, self.utgangspris, self.bostadstyp, self.omrade, self.stad, self.price_text, self.url))
+        connection.commit()
+
+def create_table(connection):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS real_estate_listings (
+                id SERIAL PRIMARY KEY,
+                booli_price FLOAT,
+                boarea FLOAT,
+                rum INTEGER,
+                biarea FLOAT,
+                tomtstorlek FLOAT,
+                byggar INTEGER,
+                utgangspris FLOAT,
+                bostadstyp VARCHAR(100),
+                omrade VARCHAR(100),
+                stad VARCHAR(100),
+                price_text VARCHAR(255),
+                url TEXT
+            )
+        """)
+    connection.commit()
+
+def connect_to_db():
+    try:
+        connection = psycopg2.connect(
+            dbname="postgres",
+            user="postgres",
+            password="MjoQCReJhNxvGZQ7",
+            host="caustically-usable-dinosaur.data-1.use1.tembo.io",
+            port="5432"
+        )
+        return connection
+    except Exception as error:
+        print(f"Error connecting to database: {error}")
+        return None
 
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
