@@ -79,17 +79,16 @@ st.set_page_config(
 
 @st.cache_data
 def get_gdp_data():
-    """Grab GDP data from a CSV file.
-
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
+    """Connect to DB and create the table, as well as a dummy-row
     """
 
     # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/test.csv'
-    raw_gdp_df = pd.to_csv(DATA_FILENAME)
- 
+    connection = connect_to_db()
+    create_table(connection)
+
+    # Create dummy listing
+    listing = RealEstateListing(1000000, 120, 4, 20, 500, 1990, 950000, "Villa", "Norrmalm", "Stockholm", "1,000,000 SEK", "http://example.com")
+    listing.store_in_db(connection)
     return gdp_df
  
 
