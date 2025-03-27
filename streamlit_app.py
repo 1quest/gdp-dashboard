@@ -215,7 +215,7 @@ def fetch_all_rows(connection):
 
 def scrape_booli():
     pages = booli_find_number_of_pages_data(url_booli_uppsala_kommun)
-    return True
+    return pages
 
 # -----------------------------------------------------------------------------
 # Draw the actual page
@@ -238,7 +238,8 @@ if st.button('Save CSV'):
 
 # Add a button to the page that runs the scraping-method
 if st.button('Scrape again'):
-    scrape_booli()
+    pages = scrape_booli()
+    st.write("Returned " + pages + " results.")
 
 ''
 ''
