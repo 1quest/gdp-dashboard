@@ -26,8 +26,7 @@ def get_gdp_data():
     raw_gdp_df = pd.to_csv(DATA_FILENAME)
  
     return gdp_df
-
-gdp_df = get_gdp_data()
+ 
 
 # -----------------------------------------------------------------------------
 # Draw the actual page
