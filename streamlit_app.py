@@ -78,7 +78,7 @@ st.header('GDP over time', divider='gray')
 
 ''
 
-st.header(f'GDP in {to_year}', divider='gray')
+st.header(f'GDP in 2022', divider='gray')
 
 ''
 
