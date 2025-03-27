@@ -93,13 +93,6 @@ if not len(countries):
 ''
 ''
 
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
-
 st.header('GDP over time', divider='gray')
 
 ''
