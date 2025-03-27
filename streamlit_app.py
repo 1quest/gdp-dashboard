@@ -239,7 +239,7 @@ if st.button('Save CSV'):
 # Add a button to the page that runs the scraping-method
 if st.button('Scrape again'):
     pages = scrape_booli()
-    st.write("Returned " + pages + " results.")
+    st.write("Returned " + str(pages) + " results.")
 
 ''
 ''
