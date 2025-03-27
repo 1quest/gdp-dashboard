@@ -3,6 +3,7 @@ import pandas as pd
 import math
 from pathlib import Path
 import psycopg2
+import requests
 
 class RealEstateListing:
     def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url):
