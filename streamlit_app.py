@@ -187,7 +187,7 @@ def booli_scrape_objects(links):
 # Declare some useful functions for database connection.
 
 @st.cache_data
-def get_gdp_data():
+def db_save_dummy_row():
     """Connect to DB and create the table, as well as a dummy-row
     """
 
@@ -231,11 +231,11 @@ st.header('GDP over time', divider='gray')
 ''
 # Add a button to the page that runs the save_csv method
 if st.button('Save CSV'):
-    get_gdp_data()
+    db_save_dummy_row()
 
 # Add a button to the page that runs the scraping-method
 if st.button('Scrape again'):
-    get_gdp_data()
+    scrape_booli()
 
 ''
 ''
