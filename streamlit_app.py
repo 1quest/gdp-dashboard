@@ -36,7 +36,7 @@ class RealEstateListing:
         booli_price = float(self.booli_price.replace(',', '.')) if isinstance(self.booli_price, str) else self.booli_price
         boarea = float(self.boarea.replace(',', '.')) if isinstance(self.boarea, str) else self.boarea
         biarea = float(self.biarea.replace(',', '.')) if isinstance(self.biarea, str) else self.biarea
-        tomtstorlek = float(self.tomtstorlek.replace(',', '.')) if isinstance(self.tomtstorlek, str) else self.tomtstorlek
+        tomtstorlek = str(self.tomtstorlek).replace(',', '.')
         utgangspris = float(self.utgangspris.replace(',', '.')) if isinstance(self.utgangspris, str) else self.utgangspris
         
         with connection.cursor() as cursor:
