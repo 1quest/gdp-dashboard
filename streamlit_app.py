@@ -218,6 +218,13 @@ def fetch_all_rows(connection):
         columns = [desc[0] for desc in cursor.description]
         return pd.DataFrame(rows, columns=columns)
 
+def fetch_row_count(connection):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) as Num_listings FROM real_estate_listings")
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return pd.DataFrame(rows, columns=columns)['Num_listings'].iloc[0]
+
 # -----------------------------------------------------------------------------
 # Declare some useful functions for the app.
 
@@ -274,11 +281,12 @@ connection = connect_to_db()
 if connection:
     if st.button("Fetch All Listings"):
         df = fetch_all_rows(connection)
+        num_listings = fetch_row_count(connection)
         if not df.empty:
-            st.write("Top 5 Listings:")
+            st.write("Top 5 Listings out of total " + str(num_listings) + " listings:")
             st.dataframe(df.head(5))
         else:
-            st.write("No listings found.")
+            st.write("No listings found.") 
     connection.close()
 
 cols = st.columns(4)
