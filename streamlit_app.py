@@ -54,7 +54,7 @@ def create_table(connection):
                 id SERIAL PRIMARY KEY,
                 booli_price DOUBLE PRECISION,
                 boarea DOUBLE PRECISION,
-                rum INTEGER,
+                rum DOUBLE PRECISION,
                 biarea DOUBLE PRECISION,
                 tomtstorlek DOUBLE PRECISION,
                 byggar INTEGER,
@@ -224,7 +224,7 @@ def fetch_all_rows(connection):
 # Helper function to safely extract text
 def safe_extract(li_elements, index, suffix=''):
     try:
-        return li_elements[index].find('p').get_text(strip=True).replace(suffix, '').replace(u'\xa0', u'').replace('rum', '').strip()
+        return li_elements[index].find('p').get_text(strip=True).replace(suffix, '').replace(u'\xa0', u'').replace('rum', '').strip().replace(',','.')
     except IndexError:
         return None
 
@@ -253,7 +253,7 @@ st.header('GDP over time', divider='gray')
 
 ''
 ''
-# Add a button to the page that runs the save_csv method
+# Add a button to the page that runs the db_recreate_table method
 if st.button('Drop and Create table'):
     db_recreate_table()
 
