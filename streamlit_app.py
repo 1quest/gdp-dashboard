@@ -32,25 +32,33 @@ class RealEstateListing:
                 f"stad={self.stad}, price_text={self.price_text}, url={self.url})")
 
     def store_in_db(self, connection):
+        # Convert values to dot separated instead of comma separated format
+        booli_price = float(self.booli_price.replace(',', '.')) if isinstance(self.booli_price, str) else self.booli_price
+        boarea = float(self.boarea.replace(',', '.')) if isinstance(self.boarea, str) else self.boarea
+        biarea = float(self.biarea.replace(',', '.')) if isinstance(self.biarea, str) else self.biarea
+        tomtstorlek = float(self.tomtstorlek.replace(',', '.')) if isinstance(self.tomtstorlek, str) else self.tomtstorlek
+        utgangspris = float(self.utgangspris.replace(',', '.')) if isinstance(self.utgangspris, str) else self.utgangspris
+        
         with connection.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (self.booli_price, self.boarea, self.rum, self.biarea, self.tomtstorlek, self.byggar, self.utgangspris, self.bostadstyp, self.omrade, self.stad, self.price_text, self.url))
         connection.commit()
-
+        
 def create_table(connection):
     with connection.cursor() as cursor:
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS real_estate_listings (
+            DROP TABLE IF EXISTS real_estate_listings;
+            CREATE TABLE real_estate_listings (
                 id SERIAL PRIMARY KEY,
-                booli_price FLOAT,
-                boarea FLOAT,
+                booli_price DOUBLE PRECISION,
+                boarea DOUBLE PRECISION,
                 rum INTEGER,
-                biarea FLOAT,
-                tomtstorlek FLOAT,
+                biarea DOUBLE PRECISION,
+                tomtstorlek DOUBLE PRECISION,
                 byggar INTEGER,
-                utgangspris FLOAT,
+                utgangspris DOUBLE PRECISION,
                 bostadstyp VARCHAR(100),
                 omrade VARCHAR(100),
                 stad VARCHAR(100),
