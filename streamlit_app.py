@@ -171,10 +171,7 @@ def drop_forsale_table(connection):
         connection.commit()  # Commit the drop table statement  
 
 def create_table(connection):
-    with connection.cursor() as cursor:
-        # Drop the table if it exists
-        cursor.execute("DROP TABLE IF EXISTS real_estate_listings")
-        connection.commit()  # Commit the drop table statement
+    with connection.cursor() as cursor: 
         cursor.execute("""
             CREATE TABLE real_estate_listings (
                 id SERIAL PRIMARY KEY,
@@ -271,6 +268,7 @@ st.header('GDP over time', divider='gray')
 if st.button('Drop and Create table'):
     connection = connect_to_db()
     drop_forsale_table(connection)
+    create_table(connection)
 
 # Add a button to the page that runs the scraping-method
 if st.button('Scrape again'):
