@@ -223,7 +223,7 @@ def fetch_row_count(connection):
         cursor.execute("SELECT COUNT(*) as Num_listings FROM real_estate_listings")
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
-        return pd.DataFrame(rows, columns=columns)['Num_listings'].iloc[0]
+        return pd.DataFrame(rows, columns=columns)['num_listings'].iloc[0]
 
 # -----------------------------------------------------------------------------
 # Declare some useful functions for the app.
