@@ -1,17 +1,14 @@
 import streamlit as st
 import pandas as pd
-import math
-from pathlib import Path
 import psycopg2
 import requests
 from bs4 import BeautifulSoup
 import re
 
-#------------------------------------------------------------------------------
 # Declare Class for a listing to only have one place to maintain
-
 class RealEstateListing:
-    def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url):
+    def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad,
+                 price_text, url):
         self.booli_price = booli_price
         self.boarea = boarea
         self.rum = rum
@@ -38,18 +35,22 @@ class RealEstateListing:
         biarea = float(self.biarea.replace(',', '.')) if isinstance(self.biarea, str) else self.biarea
         tomtstorlek = float(self.tomtstorlek.replace(',', '.')) if isinstance(self.tomtstorlek, str) else self.tomtstorlek
         utgangspris = float(self.utgangspris.replace(',', '.')) if isinstance(self.utgangspris, str) else self.utgangspris
-        
+
         with connection.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (self.booli_price, self.boarea, self.rum, self.biarea, self.tomtstorlek, self.byggar, self.utgangspris, self.bostadstyp, self.omrade, self.stad, self.price_text, self.url))
+            """, (
+            booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp, self.omrade,
+            self.stad, self.price_text, self.url))
         connection.commit()
-        
+
 def create_table(connection):
     with connection.cursor() as cursor:
+        cursor.execute("DROP TABLE IF EXISTS real_estate_listings")
+        connection.commit()  # Commit the drop table statement
+
         cursor.execute("""
-            DROP TABLE IF EXISTS real_estate_listings;
             CREATE TABLE real_estate_listings (
                 id SERIAL PRIMARY KEY,
                 booli_price DOUBLE PRECISION,
@@ -66,7 +67,7 @@ def create_table(connection):
                 url TEXT
             )
         """)
-    connection.commit()
+        connection.commit()  # Commit the creation table statement
 
 def connect_to_db():
     try:
@@ -82,20 +83,24 @@ def connect_to_db():
         print(f"Error connecting to database: {error}")
         return None
 
+def fetch_all_rows(connection):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT utgangspris,booli_price,omrade,bostadstyp,url FROM real_estate_listings")
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return pd.DataFrame(rows, columns=columns)
+
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
     page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
+    page_icon=':earth_americas:',  # This is an emoji shortcode. Could be a URL too.
 )
 
-#------------------------------------------------------------------------------
 # Declare some useful parameters
 url_booli_uppsala_kommun = 'https://www.booli.se/sok/till-salu?areaIds=1116&objectType=Villa&maxListPrice=7000000&minRooms=3.5'
 url_booli_home = 'https://www.booli.se'
 
-#------------------------------------------------------------------------------
 # Declare some useful methods for scraping
-
 def booli_find_number_of_pages_data(url):
     request = requests.get(url)
     soup = BeautifulSoup(request.text, 'lxml')
@@ -161,7 +166,8 @@ def booli_scrape_objects(links):
             price_text = '-999999'
 
         # Find the p element with the specific class containing the desired price
-        booli_price = soup.find('p', class_='heading-5 whitespace-nowrap first-letter:uppercase tabular-nums lining-nums')
+        booli_price = soup.find('p',
+                                class_='heading-5 whitespace-nowrap first-letter:uppercase tabular-nums lining-nums')
 
         if booli_price:
             # Extract the text content and remove the ' kr' part
@@ -191,46 +197,32 @@ def booli_scrape_objects(links):
         # Find all matches
         bostadstyp, omrade, stad = re.findall(pattern, str(utgangspris))[0].split(' · ')
 
-        listing = RealEstateListing(booli_price, boarea, rum, biarea, tomtstorlek, byggar, price_text, bostadstyp, omrade, stad, price_text, url_loop)
+        listing = RealEstateListing(booli_price, boarea, rum, biarea, tomtstorlek, byggar, price_text, bostadstyp,
+                                    omrade, stad, price_text, url_loop)
         listings.append(listing)
 
     return listings
 
-
-# -----------------------------------------------------------------------------
 # Declare some useful functions for database connection.
-
 @st.cache_data
 def db_recreate_table():
     """Connect to DB and create the table, as well as a dummy-row
     """
-
     # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
     connection = connect_to_db()
     create_table(connection)
-  
     return True
 
-def fetch_all_rows(connection):
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM real_estate_listings")
-        rows = cursor.fetchall()
-        columns = [desc[0] for desc in cursor.description]
-        return pd.DataFrame(rows, columns=columns)
-
-# -----------------------------------------------------------------------------
 # Declare some useful functions for the app.
-
-# Helper function to safely extract text
 def safe_extract(li_elements, index, suffix=''):
     try:
-        return li_elements[index].find('p').get_text(strip=True).replace(suffix, '').replace(u'\xa0', u'').replace('rum', '').strip().replace(',','.')
+        return li_elements[index].find('p').get_text(strip=True).replace(suffix, '').replace(u'\xa0', u'').replace(
+            'rum', '').strip().replace(',', '.')
     except IndexError:
         return None
 
 def scrape_booli():
     connection = connect_to_db()
-    
     pages = booli_find_number_of_pages_data(url_booli_uppsala_kommun)
     links = booli_scrape_links(url_booli_uppsala_kommun, pages)
     listings = booli_scrape_objects(links)
@@ -238,19 +230,15 @@ def scrape_booli():
         listing.store_in_db(connection)
     return pages
 
-# -----------------------------------------------------------------------------
 # Draw the actual page
-
 # Set the title that appears at the top of the page.
 '''
-# :earth_americas: GDP dashboard 
+# :earth_americas: Booli Analysis for Uppsala
 '''
 
 # Add some spacing
 ''
-
-st.header('GDP over time', divider='gray')
-
+st.header('Booli listings in Uppsala below 7M SEK', divider='gray')
 ''
 ''
 # Add a button to the page that runs the db_recreate_table method
@@ -266,19 +254,34 @@ if st.button('Scrape again'):
 ''
 
 st.header(f'Current listings in Database', divider='gray')
-
 ''
+# Initialize session state for DataFrame and columns
+if 'data_loaded' not in st.session_state:
+    st.session_state.data_loaded = False
+    st.session_state.df = pd.DataFrame()
+    st.session_state.filter_columns = []
 
-connection = connect_to_db()
+# Button to load data
+if st.button("Fetch All Listings"):
+    connection = connect_to_db()
+    df = fetch_all_rows(connection)
+    if df is not None and not df.empty:
+        st.session_state.df = df
+        st.session_state.data_loaded = True
+        st.session_state.filter_columns = df.columns.tolist()
 
-if connection:
-    if st.button("Fetch All Listings"):
-        df = fetch_all_rows(connection)
-        if not df.empty:
-            st.write("Top 5 Listings:")
-            st.dataframe(df.head(5))
-        else:
-            st.write("No listings found.")
-    connection.close()
+# Display data and filter options if data is loaded
+if st.session_state.data_loaded:
+    df = st.session_state.df
 
-cols = st.columns(4)
+    # Allow the user to filter columns
+    st.session_state.filter_columns = st.multiselect(
+        'Select columns to filter',
+        df.columns.tolist(),
+        default=st.session_state.filter_columns
+    )
+
+    if st.session_state.filter_columns:
+        st.dataframe(df[st.session_state.filter_columns])
+else:
+    st.write("No listings found.")
