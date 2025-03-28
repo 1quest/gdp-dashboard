@@ -48,8 +48,8 @@ class RealEstateListing:
         
 def create_table(connection):
     with connection.cursor() as cursor:
+        cursor.execute("DROP TABLE IF EXISTS real_estate_listings")
         cursor.execute("""
-            DROP TABLE IF EXISTS real_estate_listings;
             CREATE TABLE real_estate_listings (
                 id SERIAL PRIMARY KEY,
                 booli_price DOUBLE PRECISION,
