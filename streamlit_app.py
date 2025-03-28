@@ -201,16 +201,14 @@ def booli_scrape_objects(links):
 # Declare some useful functions for database connection.
 
 @st.cache_data
-def db_save_dummy_row():
+def db_recreate_table():
     """Connect to DB and create the table, as well as a dummy-row
     """
 
     # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
     connection = connect_to_db()
     create_table(connection)
-
-    # Create dummy listing
-    listing = RealEstateListing(1000000, 120, 4, 20, 500, 1990, 950000, "Villa", "Norrmalm", "Stockholm", "1,000,000 SEK", "http://example.com")
+ 
     listing.store_in_db(connection)
     return listing
 
@@ -257,8 +255,8 @@ st.header('GDP over time', divider='gray')
 ''
 ''
 # Add a button to the page that runs the save_csv method
-if st.button('Save CSV'):
-    db_save_dummy_row()
+if st.button('Drop and Create table'):
+    db_recreate_table()
 
 # Add a button to the page that runs the scraping-method
 if st.button('Scrape again'):
