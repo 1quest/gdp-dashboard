@@ -269,6 +269,7 @@ st.header('GDP over time', divider='gray')
 ''
 # Add a button to the page that runs the db_recreate_table method
 if st.button('Drop and Create table'):
+    connection = connect_to_db()
     drop_forsale_table()
 
 # Add a button to the page that runs the scraping-method
