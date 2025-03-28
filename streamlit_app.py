@@ -48,7 +48,9 @@ class RealEstateListing:
         
 def create_table(connection):
     with connection.cursor() as cursor:
+        # Drop the table if it exists
         cursor.execute("DROP TABLE IF EXISTS real_estate_listings")
+        connection.commit()  # Commit the drop table statement
         cursor.execute("""
             CREATE TABLE real_estate_listings (
                 id SERIAL PRIMARY KEY,
@@ -66,7 +68,7 @@ def create_table(connection):
                 url TEXT
             )
         """)
-    connection.commit()
+        connection.commit()
 
 def connect_to_db():
     try:
