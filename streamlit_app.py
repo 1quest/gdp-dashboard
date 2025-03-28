@@ -208,9 +208,8 @@ def db_recreate_table():
     # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
     connection = connect_to_db()
     create_table(connection)
- 
-    listing.store_in_db(connection)
-    return listing
+  
+    return True
 
 def fetch_all_rows(connection):
     with connection.cursor() as cursor:
