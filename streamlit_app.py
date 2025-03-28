@@ -45,44 +45,6 @@ class RealEstateListing:
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (self.booli_price, self.boarea, self.rum, self.biarea, self.tomtstorlek, self.byggar, self.utgangspris, self.bostadstyp, self.omrade, self.stad, self.price_text, self.url))
         connection.commit()
-        
-def create_table(connection):
-    with connection.cursor() as cursor:
-        # Drop the table if it exists
-        cursor.execute("DROP TABLE IF EXISTS real_estate_listings")
-        connection.commit()  # Commit the drop table statement
-        cursor.execute("""
-            CREATE TABLE real_estate_listings (
-                id SERIAL PRIMARY KEY,
-                booli_price DOUBLE PRECISION,
-                boarea DOUBLE PRECISION,
-                rum DOUBLE PRECISION,
-                biarea DOUBLE PRECISION,
-                tomtstorlek DOUBLE PRECISION,
-                byggar INTEGER,
-                utgangspris DOUBLE PRECISION,
-                bostadstyp VARCHAR(100),
-                omrade VARCHAR(100),
-                stad VARCHAR(100),
-                price_text VARCHAR(255),
-                url TEXT
-            )
-        """)
-        connection.commit()
-
-def connect_to_db():
-    try:
-        connection = psycopg2.connect(
-            dbname="postgres",
-            user="postgres",
-            password="MjoQCReJhNxvGZQ7",
-            host="caustically-usable-dinosaur.data-1.use1.tembo.io",
-            port="5432"
-        )
-        return connection
-    except Exception as error:
-        print(f"Error connecting to database: {error}")
-        return None
 
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
@@ -202,11 +164,54 @@ def booli_scrape_objects(links):
 # -----------------------------------------------------------------------------
 # Declare some useful functions for database connection.
 
+def drop_forsale_table(connection):
+    with connection.cursor() as cursor:
+        # Drop the table if it exists
+        cursor.execute("DROP TABLE IF EXISTS real_estate_listings")
+        connection.commit()  # Commit the drop table statement  
+
+def create_table(connection):
+    with connection.cursor() as cursor:
+        # Drop the table if it exists
+        cursor.execute("DROP TABLE IF EXISTS real_estate_listings")
+        connection.commit()  # Commit the drop table statement
+        cursor.execute("""
+            CREATE TABLE real_estate_listings (
+                id SERIAL PRIMARY KEY,
+                booli_price DOUBLE PRECISION,
+                boarea DOUBLE PRECISION,
+                rum DOUBLE PRECISION,
+                biarea DOUBLE PRECISION,
+                tomtstorlek DOUBLE PRECISION,
+                byggar INTEGER,
+                utgangspris DOUBLE PRECISION,
+                bostadstyp VARCHAR(100),
+                omrade VARCHAR(100),
+                stad VARCHAR(100),
+                price_text VARCHAR(255),
+                url TEXT
+            )
+        """)
+        connection.commit()
+
+def connect_to_db():
+    try:
+        connection = psycopg2.connect(
+            dbname="postgres",
+            user="postgres",
+            password="MjoQCReJhNxvGZQ7",
+            host="caustically-usable-dinosaur.data-1.use1.tembo.io",
+            port="5432"
+        )
+        return connection
+    except Exception as error:
+        print(f"Error connecting to database: {error}")
+        return None
+
 @st.cache_data
 def db_recreate_table():
     """Connect to DB and create the table, as well as a dummy-row
     """
-
     # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
     connection = connect_to_db()
     create_table(connection)
@@ -264,7 +269,7 @@ st.header('GDP over time', divider='gray')
 ''
 # Add a button to the page that runs the db_recreate_table method
 if st.button('Drop and Create table'):
-    db_recreate_table()
+    drop_forsale_table()
 
 # Add a button to the page that runs the scraping-method
 if st.button('Scrape again'):
