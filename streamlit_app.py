@@ -90,12 +90,6 @@ def fetch_all_rows(connection):
         columns = [desc[0] for desc in cursor.description]
         return pd.DataFrame(rows, columns=columns)
 
-# Set the title and favicon that appear in the Browser's tab bar.
-st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:',  # This is an emoji shortcode. Could be a URL too.
-)
-
 # Declare some useful parameters
 url_booli_uppsala_kommun = 'https://www.booli.se/sok/till-salu?areaIds=1116&objectType=Villa&maxListPrice=7000000&minRooms=3.5'
 url_booli_home = 'https://www.booli.se'
@@ -231,6 +225,13 @@ def scrape_booli():
     return pages
 
 # Draw the actual page
+
+# Set the title and favicon that appear in the Browser's tab bar.
+st.set_page_config(
+    page_title='Booli Uppsala dashboard',
+    page_icon=':earth_americas:',  # This is an emoji shortcode. Could be a URL too.
+)
+
 # Set the title that appears at the top of the page.
 '''
 # :earth_americas: Booli Analysis for Uppsala
@@ -282,6 +283,17 @@ if st.session_state.data_loaded:
     )
 
     if st.session_state.filter_columns:
-        st.dataframe(df[st.session_state.filter_columns])
+        filtered_df = df[st.session_state.filter_columns]
+
+        # Convert URLs to hyperlinks for rendering
+        if 'url' in filtered_df.columns:
+            filtered_df['url'] = filtered_df['url'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
+
+        # Display DataFrame with sorting capabilities
+        st.dataframe(df[st.session_state.filter_columns],
+                     column_config={
+                         "url": st.column_config.LinkColumn()
+                     }
+                     )
 else:
     st.write("No listings found.")
