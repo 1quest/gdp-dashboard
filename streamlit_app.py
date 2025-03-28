@@ -7,6 +7,9 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
+#------------------------------------------------------------------------------
+# Declare Class for a listing to only have one place to maintain
+
 class RealEstateListing:
     def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url):
         self.booli_price = booli_price
@@ -213,8 +216,21 @@ def fetch_all_rows(connection):
 # -----------------------------------------------------------------------------
 # Declare some useful functions for the app.
 
+# Helper function to safely extract text
+def safe_extract(li_elements, index, suffix=''):
+    try:
+        return li_elements[index].find('p').get_text(strip=True).replace(suffix, '').replace(u'\xa0', u'').replace('rum', '').strip()
+    except IndexError:
+        return None
+
 def scrape_booli():
+    connection = connect_to_db()
+    
     pages = booli_find_number_of_pages_data(url_booli_uppsala_kommun)
+    links = booli_scrape_links(url_booli_uppsala_kommun, pages)
+    listings = booli_scrape_objects(links[0])
+    for listing in listings:
+        listing.store_in_db(connection)
     return pages
 
 # -----------------------------------------------------------------------------
