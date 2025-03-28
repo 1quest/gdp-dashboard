@@ -270,7 +270,7 @@ if st.button("Fetch All Listings"):
         st.session_state.data_loaded = True
         st.session_state.filter_columns = df.columns.tolist()
 
-# Display data and filter options if data is loade
+# Display data and filter options if data is loaded
 if st.session_state.data_loaded:
     df = st.session_state.df
 
