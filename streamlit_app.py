@@ -309,6 +309,14 @@ if st.session_state.data_loaded:
     )
 
     if st.session_state.filter_columns:
-        st.dataframe(df[st.session_state.filter_columns])
+        # Convert URLs to hyperlinks for rendering
+         if 'url' in filtered_df.columns:
+             filtered_df['url'] = filtered_df['url'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
+        # Display DataFrame with sorting capabilities
+         st.dataframe(df[st.session_state.filter_columns],
+                      column_config={
+                          "url": st.column_config.LinkColumn()
+                      }
+                      )
 else:
     st.write("No listings found.")
