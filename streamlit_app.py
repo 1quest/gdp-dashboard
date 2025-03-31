@@ -30,11 +30,11 @@ class RealEstateListing:
 
     def store_in_db(self, connection):
         # Convert values to dot separated instead of comma separated format
-        booli_price = float(self.booli_price.replace(',', '.')) if isinstance(self.booli_price, str) else self.booli_price
-        boarea = float(self.boarea.replace(',', '.')) if isinstance(self.boarea, str) else self.boarea
-        biarea = float(self.biarea.replace(',', '.')) if isinstance(self.biarea, str) else self.biarea
-        tomtstorlek = float(self.tomtstorlek.replace(',', '.')) if isinstance(self.tomtstorlek, str) else self.tomtstorlek
-        utgangspris = float(self.utgangspris.replace(',', '.')) if isinstance(self.utgangspris, str) else self.utgangspris
+        booli_price = self.try_convert_to_float(self.booli_price)
+        boarea = self.try_convert_to_float(self.boarea)
+        biarea = self.try_convert_to_float(self.biarea)
+        tomtstorlek = self.try_convert_to_float(self.tomtstorlek)
+        utgangspris = self.try_convert_to_float(self.utgangspris)
 
         with connection.cursor() as cursor:
             cursor.execute("""
@@ -48,11 +48,11 @@ class RealEstateListing:
 
     def update_in_db(self, connection):
         # Convert values to dot separated instead of comma separated format
-        booli_price = float(self.booli_price.replace(',', '.')) if isinstance(self.booli_price, str) else self.booli_price
-        boarea = float(self.boarea.replace(',', '.')) if isinstance(self.boarea, str) else self.boarea
-        biarea = float(self.biarea.replace(',', '.')) if isinstance(self.biarea, str) else self.biarea
-        tomtstorlek = float(self.tomtstorlek.replace(',', '.')) if isinstance(self.tomtstorlek, str) else self.tomtstorlek
-        utgangspris = float(self.utgangspris.replace(',', '.')) if isinstance(self.utgangspris, str) else self.utgangspris
+        booli_price = self.try_convert_to_float(self.booli_price)
+        boarea = self.try_convert_to_float(self.boarea)
+        biarea = self.try_convert_to_float(self.biarea)
+        tomtstorlek = self.try_convert_to_float(self.tomtstorlek)
+        utgangspris = self.try_convert_to_float(self.utgangspris)
 
         with connection.cursor() as cursor:
             cursor.execute("""
@@ -120,6 +120,15 @@ url_booli_uppsala_kommun = 'https://www.booli.se/sok/till-salu?areaIds=1116&obje
 url_booli_home = 'https://www.booli.se'
 
 # Declare some useful methods for scraping
+@staticmethod
+def try_convert_to_float(value):
+    if isinstance(value, str):
+        try:
+            return float(value.replace(',', '.'))
+        except ValueError:
+            return None
+    return value
+
 def booli_find_number_of_pages_data(url):
     request = requests.get(url)
     soup = BeautifulSoup(request.text, 'lxml')
