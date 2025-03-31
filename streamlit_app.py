@@ -37,7 +37,7 @@ class RealEstateListing:
             except ValueError:
                 return None
         return value
-    
+
     def store_in_db(self, connection):
         # Convert values to dot separated instead of comma separated format
         booli_price = self.try_convert_to_float(self.booli_price)
@@ -52,7 +52,8 @@ class RealEstateListing:
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (url) DO NOTHING
             """, (
-                booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp, self.omrade,
+                booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp,
+                self.omrade,
                 self.stad, self.price_text, self.url))
         connection.commit()
 
@@ -70,9 +71,11 @@ class RealEstateListing:
                 SET booli_price = %s, boarea = %s, rum = %s, biarea = %s, tomtstorlek = %s, byggar = %s, utgangspris = %s, bostadstyp = %s, omrade = %s, stad = %s, price_text = %s
                 WHERE url = %s
             """, (
-                booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp, self.omrade,
+                booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp,
+                self.omrade,
                 self.stad, self.price_text, self.url))
         connection.commit()
+
 
 def create_table(connection):
     with connection.cursor() as cursor:
@@ -94,9 +97,11 @@ def create_table(connection):
                 stad VARCHAR(100),
                 price_text VARCHAR(255),
                 url TEXT PRIMARY KEY
+
             )
         """)
         connection.commit()  # Commit the creation table statement
+
 
 def connect_to_db():
     try:
@@ -112,6 +117,7 @@ def connect_to_db():
         st.error(f"Error connecting to database: {error}")
         return None
 
+
 def fetch_all_rows(connection):
     with connection.cursor() as cursor:
         cursor.execute("SELECT utgangspris, booli_price, omrade, bostadstyp, url FROM real_estate_listings")
@@ -119,8 +125,10 @@ def fetch_all_rows(connection):
         columns = [desc[0] for desc in cursor.description]
         return pd.DataFrame(rows, columns=columns)
 
+
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
+    layout="wide",
     page_title='GDP dashboard',
     page_icon=':earth_americas:',  # This is an emoji shortcode. Could be a URL too.
 )
@@ -128,6 +136,7 @@ st.set_page_config(
 # Declare some useful parameters
 url_booli_uppsala_kommun = 'https://www.booli.se/sok/till-salu?areaIds=1116&objectType=Villa&maxListPrice=7000000&minRooms=3.5'
 url_booli_home = 'https://www.booli.se'
+
 
 def booli_find_number_of_pages_data(url):
     request = requests.get(url)
@@ -146,6 +155,7 @@ def booli_find_number_of_pages_data(url):
         print("No matches found")
         last_number = 0
     return int(last_number)
+
 
 def booli_scrape_links(url, pages):
     hrefs = []
@@ -170,6 +180,7 @@ def booli_scrape_links(url, pages):
             continue  # Continue to the next page even if there's an error on the current page
 
     return hrefs
+
 
 def booli_scrape_objects(links):
     listings = []
@@ -229,6 +240,7 @@ def booli_scrape_objects(links):
 
     return listings
 
+
 # Declare some useful functions for database connection.
 @st.cache_data
 def db_recreate_table():
@@ -239,6 +251,7 @@ def db_recreate_table():
         connection.close()
     return True
 
+
 # Declare some useful functions for the app.
 def safe_extract(li_elements, index, suffix=''):
     try:
@@ -246,6 +259,7 @@ def safe_extract(li_elements, index, suffix=''):
             'rum', '').strip().replace(',', '.')
     except IndexError:
         return None
+
 
 def scrape_booli():
     connection = connect_to_db()
@@ -258,6 +272,7 @@ def scrape_booli():
         connection.close()
         return pages
     return 0
+
 
 # Draw the actual page
 # Set the title that appears at the top of the page.
@@ -310,13 +325,16 @@ if st.session_state.data_loaded:
 
     if st.session_state.filter_columns:
         # Convert URLs to hyperlinks for rendering
-         #if 'url' in df.columns:
-         #    df['url'] = df['url'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
+        # Remove favorite from locked list
+        filtered_columns = st.session_state.filter_columns.copy()
+        if 'utgangspris' in filtered_columns:
+            filtered_columns.remove('utgangspris')
         # Display DataFrame with sorting capabilities
-         st.dataframe(df[st.session_state.filter_columns],
-                      column_config={
-                          "url": st.column_config.LinkColumn()
-                      }
-                      )
+        st.data_editor(df[st.session_state.filter_columns],
+                     column_config={
+                         "url": st.column_config.LinkColumn()
+                     },
+                       disabled = filtered_columns
+                     )
 else:
     st.write("No listings found.")
