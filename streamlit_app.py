@@ -310,8 +310,8 @@ if st.session_state.data_loaded:
 
     if st.session_state.filter_columns:
         # Convert URLs to hyperlinks for rendering
-         if 'url' in df.columns:
-             df['url'] = df['url'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
+         #if 'url' in df.columns:
+         #    df['url'] = df['url'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
         # Display DataFrame with sorting capabilities
          st.dataframe(df[st.session_state.filter_columns],
                       column_config={
