@@ -28,6 +28,16 @@ class RealEstateListing:
                 f"utgangspris={self.utgangspris}, bostadstyp={self.bostadstyp}, omrade={self.omrade}, "
                 f"stad={self.stad}, price_text={self.price_text}, url={self.url})")
 
+    # Declare some useful methods for scraping
+    @staticmethod
+    def try_convert_to_float(value):
+        if isinstance(value, str):
+            try:
+                return float(value.replace(',', '.'))
+            except ValueError:
+                return None
+        return value
+    
     def store_in_db(self, connection):
         # Convert values to dot separated instead of comma separated format
         booli_price = self.try_convert_to_float(self.booli_price)
@@ -118,16 +128,6 @@ st.set_page_config(
 # Declare some useful parameters
 url_booli_uppsala_kommun = 'https://www.booli.se/sok/till-salu?areaIds=1116&objectType=Villa&maxListPrice=7000000&minRooms=3.5'
 url_booli_home = 'https://www.booli.se'
-
-# Declare some useful methods for scraping
-@staticmethod
-def try_convert_to_float(value):
-    if isinstance(value, str):
-        try:
-            return float(value.replace(',', '.'))
-        except ValueError:
-            return None
-    return value
 
 def booli_find_number_of_pages_data(url):
     request = requests.get(url)
