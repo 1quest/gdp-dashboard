@@ -41,8 +41,8 @@ class RealEstateListing:
                 INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
-            booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp, self.omrade,
-            self.stad, self.price_text, self.url))
+                booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp, self.omrade,
+                self.stad, self.price_text, self.url))
         connection.commit()
 
 def create_table(connection):
@@ -80,15 +80,21 @@ def connect_to_db():
         )
         return connection
     except Exception as error:
-        print(f"Error connecting to database: {error}")
+        st.error(f"Error connecting to database: {error}")
         return None
 
 def fetch_all_rows(connection):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT utgangspris,booli_price,omrade,bostadstyp,url FROM real_estate_listings")
+        cursor.execute("SELECT utgangspris, booli_price, omrade, bostadstyp, url FROM real_estate_listings")
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         return pd.DataFrame(rows, columns=columns)
+
+# Set the title and favicon that appear in the Browser's tab bar.
+st.set_page_config(
+    page_title='GDP dashboard',
+    page_icon=':earth_americas:',  # This is an emoji shortcode. Could be a URL too.
+)
 
 # Declare some useful parameters
 url_booli_uppsala_kommun = 'https://www.booli.se/sok/till-salu?areaIds=1116&objectType=Villa&maxListPrice=7000000&minRooms=3.5'
@@ -200,11 +206,11 @@ def booli_scrape_objects(links):
 # Declare some useful functions for database connection.
 @st.cache_data
 def db_recreate_table():
-    """Connect to DB and create the table, as well as a dummy-row
-    """
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
+    """Connect to DB and create the table, as well as a dummy-row"""
     connection = connect_to_db()
-    create_table(connection)
+    if connection:
+        create_table(connection)
+        connection.close()
     return True
 
 # Declare some useful functions for the app.
@@ -217,45 +223,37 @@ def safe_extract(li_elements, index, suffix=''):
 
 def scrape_booli():
     connection = connect_to_db()
-    pages = booli_find_number_of_pages_data(url_booli_uppsala_kommun)
-    links = booli_scrape_links(url_booli_uppsala_kommun, pages)
-    listings = booli_scrape_objects(links)
-    for listing in listings:
-        listing.store_in_db(connection)
-    return pages
+    if connection:
+        pages = booli_find_number_of_pages_data(url_booli_uppsala_kommun)
+        links = booli_scrape_links(url_booli_uppsala_kommun, pages)
+        listings = booli_scrape_objects(links)
+        for listing in listings:
+            listing.store_in_db(connection)
+        connection.close()
+        return pages
+    return 0
 
 # Draw the actual page
-
-# Set the title and favicon that appear in the Browser's tab bar.
-st.set_page_config(
-    page_title='Booli Uppsala dashboard',
-    page_icon=':earth_americas:',  # This is an emoji shortcode. Could be a URL too.
-)
-
 # Set the title that appears at the top of the page.
-'''
-# :earth_americas: Booli Analysis for Uppsala
-'''
+st.title(':earth_americas: Booli Analysis for Uppsala')
 
 # Add some spacing
-''
 st.header('Booli listings in Uppsala below 7M SEK', divider='gray')
-''
-''
+
 # Add a button to the page that runs the db_recreate_table method
 if st.button('Drop and Create table'):
-    db_recreate_table()
+    if db_recreate_table():
+        st.success("Table recreated successfully.")
+    else:
+        st.error("Failed to recreate the table.")
 
 # Add a button to the page that runs the scraping-method
 if st.button('Scrape again'):
     pages = scrape_booli()
-    st.write("Returned " + str(pages) + " results.")
+    st.write(f"Returned {pages} results.")
 
-''
-''
+st.header('Current listings in Database', divider='gray')
 
-st.header(f'Current listings in Database', divider='gray')
-''
 # Initialize session state for DataFrame and columns
 if 'data_loaded' not in st.session_state:
     st.session_state.data_loaded = False
@@ -265,11 +263,13 @@ if 'data_loaded' not in st.session_state:
 # Button to load data
 if st.button("Fetch All Listings"):
     connection = connect_to_db()
-    df = fetch_all_rows(connection)
-    if df is not None and not df.empty:
-        st.session_state.df = df
-        st.session_state.data_loaded = True
-        st.session_state.filter_columns = df.columns.tolist()
+    if connection:
+        df = fetch_all_rows(connection)
+        connection.close()
+        if df is not None and not df.empty:
+            st.session_state.df = df
+            st.session_state.data_loaded = True
+            st.session_state.filter_columns = df.columns.tolist()
 
 # Display data and filter options if data is loaded
 if st.session_state.data_loaded:
@@ -283,17 +283,6 @@ if st.session_state.data_loaded:
     )
 
     if st.session_state.filter_columns:
-        filtered_df = df[st.session_state.filter_columns]
-
-        # Convert URLs to hyperlinks for rendering
-        if 'url' in filtered_df.columns:
-            filtered_df['url'] = filtered_df['url'].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>')
-
-        # Display DataFrame with sorting capabilities
-        st.dataframe(df[st.session_state.filter_columns],
-                     column_config={
-                         "url": st.column_config.LinkColumn()
-                     }
-                     )
+        st.dataframe(df[st.session_state.filter_columns])
 else:
     st.write("No listings found.")
