@@ -40,6 +40,25 @@ class RealEstateListing:
             cursor.execute("""
                 INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (url) DO NOTHING
+            """, (
+                booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp, self.omrade,
+                self.stad, self.price_text, self.url))
+        connection.commit()
+
+    def update_in_db(self, connection):
+        # Convert values to dot separated instead of comma separated format
+        booli_price = float(self.booli_price.replace(',', '.')) if isinstance(self.booli_price, str) else self.booli_price
+        boarea = float(self.boarea.replace(',', '.')) if isinstance(self.boarea, str) else self.boarea
+        biarea = float(self.biarea.replace(',', '.')) if isinstance(self.biarea, str) else self.biarea
+        tomtstorlek = float(self.tomtstorlek.replace(',', '.')) if isinstance(self.tomtstorlek, str) else self.tomtstorlek
+        utgangspris = float(self.utgangspris.replace(',', '.')) if isinstance(self.utgangspris, str) else self.utgangspris
+
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                UPDATE real_estate_listings
+                SET booli_price = %s, boarea = %s, rum = %s, biarea = %s, tomtstorlek = %s, byggar = %s, utgangspris = %s, bostadstyp = %s, omrade = %s, stad = %s, price_text = %s
+                WHERE url = %s
             """, (
                 booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp, self.omrade,
                 self.stad, self.price_text, self.url))
@@ -52,7 +71,7 @@ def create_table(connection):
 
         cursor.execute("""
             CREATE TABLE real_estate_listings (
-                id SERIAL PRIMARY KEY,
+                id SERIAL,
                 booli_price DOUBLE PRECISION,
                 boarea DOUBLE PRECISION,
                 rum DOUBLE PRECISION,
@@ -64,7 +83,7 @@ def create_table(connection):
                 omrade VARCHAR(100),
                 stad VARCHAR(100),
                 price_text VARCHAR(255),
-                url TEXT
+                url TEXT PRIMARY KEY
             )
         """)
         connection.commit()  # Commit the creation table statement
@@ -160,10 +179,8 @@ def booli_scrape_objects(links):
         if price_span:
             # Extract the text content and remove the 'kr' part
             price_text = price_span.get_text(strip=True).replace(u'\xa0', u'').replace('kr', '')
-        try:
-            int(price_text)
-        except:
-            price_text = '-999999'
+        else:
+            price_text = None
 
         # Find the p element with the specific class containing the desired price
         booli_price = soup.find('p',
@@ -173,7 +190,7 @@ def booli_scrape_objects(links):
             # Extract the text content and remove the ' kr' part
             booli_price = booli_price.get_text(strip=True).split(' ')[0].replace(u'\xa0', u'').replace('kr', '')
         else:
-            booli_price = '-999999'
+            booli_price = None
 
         # Find the ul element with the housing details
         details_soup = soup.find('ul', class_='flex flex-wrap gap-y-4 gap-x-8 sm:gap-x-12 flex flex-wrap mt-6')
