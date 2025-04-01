@@ -5,10 +5,11 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
+
 # Declare Class for a listing to only have one place to maintain
 class RealEstateListing:
     def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad,
-                 price_text, url):
+                 price_text, url, already_seen=False):
         self.booli_price = booli_price
         self.boarea = boarea
         self.rum = rum
@@ -20,13 +21,14 @@ class RealEstateListing:
         self.omrade = omrade
         self.stad = stad
         self.price_text = price_text
+        self.already_seen = already_seen
         self.url = url
 
     def __repr__(self):
         return (f"RealEstateListing(booli_price={self.booli_price}, boarea={self.boarea}, rum={self.rum}, "
                 f"biarea={self.biarea}, tomtstorlek={self.tomtstorlek}, byggar={self.byggar}, "
                 f"utgangspris={self.utgangspris}, bostadstyp={self.bostadstyp}, omrade={self.omrade}, "
-                f"stad={self.stad}, price_text={self.price_text}, url={self.url})")
+                f"stad={self.stad}, price_text={self.price_text}, url={self.url}, already_seen={self.already_seen})")
 
     # Declare some useful methods for scraping
     @staticmethod
@@ -48,13 +50,13 @@ class RealEstateListing:
 
         with connection.cursor() as cursor:
             cursor.execute("""
-                INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url, already_seen)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (url) DO NOTHING
             """, (
                 booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp,
                 self.omrade,
-                self.stad, self.price_text, self.url))
+                self.stad, self.price_text, self.url, self.already_seen))
         connection.commit()
 
     def update_in_db(self, connection):
@@ -68,12 +70,12 @@ class RealEstateListing:
         with connection.cursor() as cursor:
             cursor.execute("""
                 UPDATE real_estate_listings
-                SET booli_price = %s, boarea = %s, rum = %s, biarea = %s, tomtstorlek = %s, byggar = %s, utgangspris = %s, bostadstyp = %s, omrade = %s, stad = %s, price_text = %s
+                SET booli_price = %s, boarea = %s, rum = %s, biarea = %s, tomtstorlek = %s, byggar = %s, utgangspris = %s, bostadstyp = %s, omrade = %s, stad = %s, price_text = %s, already_seen = %s
                 WHERE url = %s
             """, (
                 booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp,
                 self.omrade,
-                self.stad, self.price_text, self.url))
+                self.stad, self.price_text, self.already_seen, self.url))
         connection.commit()
 
 
@@ -96,8 +98,8 @@ def create_table(connection):
                 omrade VARCHAR(100),
                 stad VARCHAR(100),
                 price_text VARCHAR(255),
-                url TEXT PRIMARY KEY
-
+                url TEXT PRIMARY KEY,
+                already_seen BOOLEAN
             )
         """)
         connection.commit()  # Commit the creation table statement
@@ -120,7 +122,8 @@ def connect_to_db():
 
 def fetch_all_rows(connection):
     with connection.cursor() as cursor:
-        cursor.execute("SELECT utgangspris, booli_price, omrade, bostadstyp, url FROM real_estate_listings")
+        cursor.execute(
+            "SELECT already_seen, utgangspris, booli_price, omrade, bostadstyp, url FROM real_estate_listings")
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         return pd.DataFrame(rows, columns=columns)
@@ -252,7 +255,26 @@ def db_recreate_table():
     return True
 
 
+def update_already_seen_in_db(connection, url, already_seen):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            UPDATE real_estate_listings
+            SET already_seen = %s
+            WHERE url = %s
+        """, (already_seen, url))
+        connection.commit()
+
+
+def on_data_editor_change(df):
+    connection = connect_to_db()
+    if connection:
+        for index, row in df.iterrows():
+            update_already_seen_in_db(connection, row['url'], row['already_seen'])
+        connection.close()
+
+
 # Declare some useful functions for the app.
+
 def safe_extract(li_elements, index, suffix=''):
     try:
         return li_elements[index].find('p').get_text(strip=True).replace(suffix, '').replace(u'\xa0', u'').replace(
@@ -312,29 +334,35 @@ if st.button("Fetch All Listings"):
             st.session_state.data_loaded = True
             st.session_state.filter_columns = df.columns.tolist()
 
-# Display data and filter options if data is load
+# Display data and filter options if data is loaded
 if st.session_state.data_loaded:
     df = st.session_state.df
+    st.session_state.filter_columns = df.columns.tolist()
 
     # Allow the user to filter columns
-    st.session_state.filter_columns = st.multiselect(
-        'Select columns to filter',
-        df.columns.tolist(),
-        default=st.session_state.filter_columns
-    )
+    # st.session_state.filter_columns = st.multiselect(
+    #    'Select columns to filter',
+    #    df.columns.tolist(),
+    #    default=st.session_state.filter_columns
+    # )
 
     if st.session_state.filter_columns:
         # Convert URLs to hyperlinks for rendering
         # Remove favorite from locked list
         filtered_columns = st.session_state.filter_columns.copy()
-        if 'utgangspris' in filtered_columns:
-            filtered_columns.remove('utgangspris')
-        # Display DataFrame with sorting capabilities
-        st.data_editor(df[st.session_state.filter_columns],
-                     column_config={
-                         "url": st.column_config.LinkColumn()
-                     },
-                       disabled = filtered_columns
-                     )
-else:
-    st.write("No listings found.")
+        if 'already_seen' in filtered_columns:
+            filtered_columns.remove('already_seen')
+            # Display DataFrame with sorting capabilities
+            edited_df = st.data_editor(df[st.session_state.filter_columns],
+                                       column_config={
+                                           "url": st.column_config.LinkColumn()
+                                       },
+                                       on_change=lambda: on_data_editor_change(st.session_state.df),
+                                        disabled = filtered_columns
+                                        )
+            # Update the session state DataFrame with the edited data
+            if ~edited_df.equals(st.session_state.df):
+                st.session_state.df = edited_df
+                on_data_editor_change(edited_df)
+        else:
+            st.write("No listings found.")
