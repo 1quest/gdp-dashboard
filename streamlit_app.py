@@ -132,7 +132,7 @@ def fetch_all_rows(connection):
 # Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
     layout="wide",
-    page_title='GDP dashboard',
+    page_title='Booli dashboard',
     page_icon=':earth_americas:',  # This is an emoji shortcode. Could be a URL too.
 )
 
