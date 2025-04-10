@@ -50,11 +50,12 @@ class RealEstateListing:
         with connection.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url, rating_aleks, rating_bae, already_seen)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (url) DO NOTHING
             """, (
                 booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp,
-                self.omrade, self.stad, self.price_text, self.url, self.rating_aleks, self.rating_bae, self.already_seen))
+                self.omrade, self.stad, self.price_text, self.url, self.rating_aleks, self.rating_bae,
+                self.already_seen))
         connection.commit()
 
     def update_in_db(self, connection):
@@ -71,7 +72,8 @@ class RealEstateListing:
                 WHERE url = %s
             """, (
                 booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp,
-                self.omrade, self.stad, self.price_text, self.rating_aleks, self.rating_bae, self.already_seen, self.url))
+                self.omrade, self.stad, self.price_text, self.rating_aleks, self.rating_bae, self.already_seen,
+                self.url))
         connection.commit()
 
 
@@ -307,7 +309,7 @@ st.header('Booli listings in Uppsala below 7M SEK', divider='gray')
 
 if st.button('Scrape again'):
     pages = scrape_booli()
-    st.write(f"Returned {pages} results.")
+    st.write(f"Returned listings from {pages} pages.")
 
 st.header('Current listings in Database', divider='gray')
 
