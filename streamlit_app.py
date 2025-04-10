@@ -352,6 +352,7 @@ if st.session_state.data_loaded:
                         connection = connect_to_db()
                         if connection:
                             update_all_rows_in_db(connection, edited_df)
+                            df = fetch_all_rows(connection)
                             connection.close()
                             st.success("Database updated successfully.")
                         else:
