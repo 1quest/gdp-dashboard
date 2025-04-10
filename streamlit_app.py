@@ -8,7 +8,7 @@ import re
 
 class RealEstateListing:
     def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad,
-                 price_text, url, rating=None, already_seen=False):
+                 price_text, url, rating_aleks=None, rating_bae=None, already_seen=False):
         self.booli_price = booli_price
         self.boarea = boarea
         self.rum = rum
@@ -22,13 +22,14 @@ class RealEstateListing:
         self.price_text = price_text
         self.already_seen = already_seen
         self.url = url
-        self.rating = rating
+        self.rating_aleks = rating_aleks
+        self.rating_bae = rating_bae
 
     def __repr__(self):
         return (f"RealEstateListing(booli_price={self.booli_price}, boarea={self.boarea}, rum={self.rum}, "
                 f"biarea={self.biarea}, tomtstorlek={self.tomtstorlek}, byggar={self.byggar}, "
                 f"utgangspris={self.utgangspris}, bostadstyp={self.bostadstyp}, omrade={self.omrade}, "
-                f"stad={self.stad}, price_text={self.price_text}, url={self.url}, rating={self.rating}, already_seen={self.already_seen})")
+                f"stad={self.stad}, price_text={self.price_text}, url={self.url}, rating_aleks={self.rating_aleks}, rating_bae={self.rating_bae}, already_seen={self.already_seen})")
 
     @staticmethod
     def try_convert_to_float(value):
@@ -48,12 +49,12 @@ class RealEstateListing:
 
         with connection.cursor() as cursor:
             cursor.execute("""
-                INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url, rating, already_seen)
+                INSERT INTO real_estate_listings (booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad, price_text, url, rating_aleks, rating_bae, already_seen)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (url) DO NOTHING
             """, (
                 booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp,
-                self.omrade, self.stad, self.price_text, self.url, self.rating, self.already_seen))
+                self.omrade, self.stad, self.price_text, self.url, self.rating_aleks, self.rating_bae, self.already_seen))
         connection.commit()
 
     def update_in_db(self, connection):
@@ -66,11 +67,11 @@ class RealEstateListing:
         with connection.cursor() as cursor:
             cursor.execute("""
                 UPDATE real_estate_listings
-                SET booli_price = %s, boarea = %s, rum = %s, biarea = %s, tomtstorlek = %s, byggar = %s, utgangspris = %s, bostadstyp = %s, omrade = %s, stad = %s, price_text = %s, rating = %s, already_seen = %s
+                SET booli_price = %s, boarea = %s, rum = %s, biarea = %s, tomtstorlek = %s, byggar = %s, utgangspris = %s, bostadstyp = %s, omrade = %s, stad = %s, price_text = %s, rating_aleks = %s, rating_bae = %s, already_seen = %s
                 WHERE url = %s
             """, (
                 booli_price, boarea, self.rum, biarea, tomtstorlek, self.byggar, utgangspris, self.bostadstyp,
-                self.omrade, self.stad, self.price_text, self.rating, self.already_seen, self.url))
+                self.omrade, self.stad, self.price_text, self.rating_aleks, self.rating_bae, self.already_seen, self.url))
         connection.commit()
 
 
@@ -94,7 +95,8 @@ def create_table(connection):
                 stad VARCHAR(100),
                 price_text VARCHAR(255),
                 url TEXT PRIMARY KEY,
-                rating DOUBLE PRECISION,
+                rating_aleks DOUBLE PRECISION,
+                rating_bae DOUBLE PRECISION,
                 already_seen BOOLEAN
             )
         """)
@@ -119,7 +121,7 @@ def connect_to_db():
 def fetch_all_rows(connection):
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT already_seen, rating, utgangspris, booli_price, omrade, bostadstyp, url FROM real_estate_listings")
+            "SELECT already_seen, rating_aleks, rating_bae, utgangspris, booli_price, omrade, bostadstyp, url FROM real_estate_listings")
         rows = cursor.fetchall()
         columns = [desc[0] for desc in cursor.description]
         return pd.DataFrame(rows, columns=columns)
@@ -237,9 +239,9 @@ def update_all_rows_in_db(connection, df):
         for index, row in df.iterrows():
             cursor.execute("""
                 UPDATE real_estate_listings
-                SET already_seen = %s, rating = %s
+                SET already_seen = %s, rating_aleks = %s, rating_bae = %s
                 WHERE url = %s
-            """, (row['already_seen'], row['rating'], row['url']))
+            """, (row['already_seen'], None if pd.isna(row['rating_aleks']) else row['rating_aleks'], None if pd.isna(row['rating_bae']) else row['rating_bae'], row['url']))
         connection.commit()
 
 
@@ -266,16 +268,30 @@ def scrape_booli():
 
 def validate_and_clean_df(df):
     for index, row in df.iterrows():
-        rating = row['rating']
-        if pd.notnull(rating):
+        rating_aleks = row['rating_aleks']
+        if pd.notnull(rating_aleks):
             try:
-                rating = int(rating)
-                if not (0 <= rating <= 10):
-                    return False, f"Rating for row {index} is out of bounds. It should be between 0 and 10."
-                df.at[index, 'rating'] = rating
+                rating_aleks = int(rating_aleks)
+                if not (0 <= rating_aleks <= 10):
+                    df.at[index, 'rating_aleks'] = None  # Set to None if out of bounds
+                else:
+                    df.at[index, 'rating_aleks'] = rating_aleks
             except ValueError:
-                return False, f"Rating for row {index} is not a valid number."
-        df.at[index, 'rating'] = rating  # Ensure it's cleaned
+                df.at[index, 'rating_aleks'] = None  # Set to None if not a valid number
+        else:
+            df.at[index, 'rating_aleks'] = None  # Ensure None is set for NaN values
+        rating_bae = row['rating_bae']
+        if pd.notnull(rating_bae):
+            try:
+                rating_bae = int(rating_bae)
+                if not (0 <= rating_bae <= 10):
+                    df.at[index, 'rating_bae'] = None  # Set to None if out of bounds
+                else:
+                    df.at[index, 'rating_bae'] = rating_bae
+            except ValueError:
+                df.at[index, 'rating_bae'] = None  # Set to None if not a valid number
+        else:
+            df.at[index, 'rating_bae'] = None  # Ensure None is set for NaN values
     return True, None
 
 
@@ -318,7 +334,8 @@ if st.session_state.data_loaded:
         filtered_columns = st.session_state.filter_columns.copy()
         if 'already_seen' in filtered_columns:
             filtered_columns.remove('already_seen')
-            filtered_columns.remove('rating')
+            filtered_columns.remove('rating_aleks')
+            filtered_columns.remove('rating_bae')
             edited_df = st.data_editor(df[st.session_state.filter_columns],
                                        column_config={
                                            "url": st.column_config.LinkColumn()
@@ -326,7 +343,7 @@ if st.session_state.data_loaded:
                                        disabled=filtered_columns
                                        )
 
-            if st.button('Update Database'):
+            if st.button('Save to Database'):
                 valid, error_message = validate_and_clean_df(edited_df)
                 if valid:
                     with st.spinner('Saving...'):
