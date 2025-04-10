@@ -283,7 +283,7 @@ st.title(':earth_americas: Booli Analysis for Uppsala')
 
 st.header('Booli listings in Uppsala below 7M SEK', divider='gray')
 
-#if st.button('Drop and Create table'):
+# if st.button('Drop and Create table'):
 #    if db_recreate_table():
 #        st.success("Table recreated successfully.")
 #    else:
