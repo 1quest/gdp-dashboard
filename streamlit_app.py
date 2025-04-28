@@ -242,9 +242,9 @@ def update_all_rows_in_db(connection, df):
         for index, row in df.iterrows():
             cursor.execute("""
                 UPDATE real_estate_listings
-                SET already_seen = %s, rating_aleks = %s, rating_bae = %s
+                SET rating_aleks = %s, rating_bae = %s
                 WHERE url = %s
-            """, (row['already_seen'], None if pd.isna(row['rating_aleks']) else row['rating_aleks'], None if pd.isna(row['rating_bae']) else row['rating_bae'], row['url']))
+            """, (None if pd.isna(row['rating_aleks']) else row['rating_aleks'], None if pd.isna(row['rating_bae']) else row['rating_bae'], row['url']))
         connection.commit()
 
 def safe_extract(li_elements, index, suffix=''):
