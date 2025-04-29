@@ -142,7 +142,7 @@ st.set_page_config(
     page_icon=':earth_americas:',
 )
 
-url_booli_uppsala_kommun = 'https://www.booli.se/sok/till-salu?areaIds=1116,116744,116741,885508,116747,116704&maxListPrice=7000000&minRooms=3.5&objectType=Villa'
+url_booli_uppsala_kommun = 'https://www.booli.se/sok/till-salu?areaIds=1116,116744,116741,885508,116747,9338,116704&maxListPrice=7000000&minRooms=3.5&objectType=Villa'
 url_booli_home = 'https://www.booli.se'
 
 def booli_find_number_of_pages_data(url):
