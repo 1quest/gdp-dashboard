@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from datetime import datetime
-
+# Class for storing / reading listings
 class RealEstateListing:
     def __init__(self, booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris, bostadstyp, omrade, stad,
                  price_text, url, scrape_date=None, rating_aleks=None, rating_bae=None, already_seen=False):
