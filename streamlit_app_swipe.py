@@ -321,7 +321,7 @@ if not st.session_state.listings.empty:
                     st.session_state.image_index = min(total - 1, current + 1)
                     st.rerun()
         else:
-            st.write("No images found.")
+            st.write("No image found.")
 
         st.write(f"**Price:** {format_price(listing['price_text'])}")
         st.write(f"**Booli estimate:** {format_price(listing['booli_price'])}")
