@@ -245,6 +245,10 @@ if "image_index" not in st.session_state:
     st.session_state.image_index = 0
 if "image_cache" not in st.session_state:
     st.session_state.image_cache = {}
+if "show_top_matches" not in st.session_state:
+    st.session_state.show_top_matches = False
+if "show_swiping" not in st.session_state:
+    st.session_state.show_swiping = True
 
 # -------------------- User Selection Page --------------------
 if not st.session_state.user_name:
@@ -265,92 +269,136 @@ st.sidebar.title("Menu")
 if st.sidebar.button("Scrape new listings"):
     pages = scrape_booli()
     st.sidebar.success(f"Scraped listings from {pages} pages.")
+if st.sidebar.button("Top Matches ❤️🔥"):
+    st.session_state.show_top_matches = True
+    st.session_state.show_swiping = False
+    st.rerun()
 
-# -------------------- Load Listings Button --------------------
-if st.button("\U0001F504 Load Listings"):
+# -------------------- Swiping page --------------------
+if st.session_state.show_swiping:
+    # -------------------- Load Listings Button --------------------
+    if st.button("\U0001F504 Load Listings"):
+        conn = connect_to_db()
+        if conn:
+            df = fetch_unrated_listings(conn, st.session_state.user_name)
+            conn.close()
+            if not df.empty:
+                st.session_state.listings = df
+                st.session_state.listing_index = 0
+                st.session_state.image_index = 0
+                st.session_state.image_cache = {}
+            else:
+                st.warning("No new listings to rate.")
+
+    # -------------------- Show One Listing --------------------
+    if not st.session_state.listings.empty:
+        index = st.session_state.listing_index
+        listings = st.session_state.listings
+
+        if index < len(listings):
+            listing = listings.iloc[index]
+            listing_url = listing["url"]
+            st.subheader(f"{listing['bostadstyp']} in {listing['omrade']}, {listing['stad']}")
+
+            if index + 1 < len(listings):
+                next_url = listings.iloc[index + 1]["url"]
+                if next_url not in st.session_state.image_cache:
+                    st.session_state.image_cache[next_url] = extract_gallery_images(next_url)
+
+            if listing_url not in st.session_state.image_cache:
+                image_urls = extract_gallery_images(listing_url)
+                st.session_state.image_cache[listing_url] = image_urls
+            else:
+                image_urls = st.session_state.image_cache[listing_url]
+
+            if image_urls:
+                if st.session_state.image_index >= len(image_urls):
+                    st.session_state.image_index = 0
+
+                current = st.session_state.image_index
+                total = len(image_urls)
+
+                st.image(image_urls[current], use_container_width=True)
+                st.caption(f"\U0001F4F8 Image {current + 1} / {total}")
+
+                col_prev, col_next = st.columns([1, 1])
+                with col_prev:
+                    if st.button("\u2B05\uFE0F Previous Image"):
+                        st.session_state.image_index = max(0, current - 1)
+                        st.rerun()
+                with col_next:
+                    if st.button("\u27A1\uFE0F Next Image"):
+                        st.session_state.image_index = min(total - 1, current + 1)
+                        st.rerun()
+            else:
+                st.write("No image found.")
+
+            st.write(f"**Price:** {format_price(listing['price_text'])}")
+            st.write(f"**Booli estimate:** {format_price(listing['booli_price'])}")
+            st.write(f"**Living Area:** {listing['boarea']} m²")
+            st.write(f"**Rooms:** {listing['rum']}")
+            st.write(f"**Plot Size:** {listing['tomtstorlek']} m²")
+            st.write(f"**Year Built:** {listing['byggar']}")
+            st.write(f"[\U0001F517 View Listing]({listing['url']})")
+
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button("\U0001F44E Dislike", key="dislike"):
+                    conn = connect_to_db()
+                    if conn:
+                        mark_seen(conn, listing['url'], liked=False, user=st.session_state.user_name)
+                        conn.close()
+                        st.session_state.listing_index += 1
+                        st.session_state.image_index = 0
+                        st.rerun()
+            with col2:
+                if st.button("❤️ Like", key="like"):
+                    conn = connect_to_db()
+                    if conn:
+                        mark_seen(conn, listing['url'], liked=True, user=st.session_state.user_name)
+                        conn.close()
+                        st.session_state.listing_index += 1
+                        st.session_state.image_index = 0
+                        st.rerun()
+        else:
+            st.success("You've rated all listings! ✅")
+    else:
+        st.info("Click 'Load Listings' to begin swiping.")
+# -------------------- Top Matches Page --------------------
+if st.session_state.show_top_matches:
+    if st.button("🔙 Back to Listings"):
+        st.session_state.show_top_matches = False
+        st.session_state.show_swiping = True
+        st.rerun()
+
     conn = connect_to_db()
     if conn:
-        df = fetch_unrated_listings(conn, st.session_state.user_name)
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris,
+                       bostadstyp, omrade, stad, price_text, url
+                FROM real_estate_listings
+                WHERE rating_aleks = '10' AND rating_bae = '10'
+                ORDER BY scrape_date DESC
+            """)
+            rows = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            df = pd.DataFrame(rows, columns=columns)
         conn.close()
-        if not df.empty:
-            st.session_state.listings = df
-            st.session_state.listing_index = 0
-            st.session_state.image_index = 0
-            st.session_state.image_cache = {}
+
+        st.subheader("🏆 Listings liked by both Cecilia and Aleksandar (10/10)")
+
+        if df.empty:
+            st.info("No shared top-rated listings found yet.")
         else:
-            st.warning("No new listings to rate.")
-
-# -------------------- Show One Listing --------------------
-if not st.session_state.listings.empty:
-    index = st.session_state.listing_index
-    listings = st.session_state.listings
-
-    if index < len(listings):
-        listing = listings.iloc[index]
-        listing_url = listing["url"]
-        st.subheader(f"{listing['bostadstyp']} in {listing['omrade']}, {listing['stad']}")
-
-        if index + 1 < len(listings):
-            next_url = listings.iloc[index + 1]["url"]
-            if next_url not in st.session_state.image_cache:
-                st.session_state.image_cache[next_url] = extract_gallery_images(next_url)
-
-        if listing_url not in st.session_state.image_cache:
-            image_urls = extract_gallery_images(listing_url)
-            st.session_state.image_cache[listing_url] = image_urls
-        else:
-            image_urls = st.session_state.image_cache[listing_url]
-
-        if image_urls:
-            if st.session_state.image_index >= len(image_urls):
-                st.session_state.image_index = 0
-
-            current = st.session_state.image_index
-            total = len(image_urls)
-
-            st.image(image_urls[current], use_container_width=True)
-            st.caption(f"\U0001F4F8 Image {current + 1} / {total}")
-
-            col_prev, col_next = st.columns([1, 1])
-            with col_prev:
-                if st.button("\u2B05\uFE0F Previous Image"):
-                    st.session_state.image_index = max(0, current - 1)
-                    st.rerun()
-            with col_next:
-                if st.button("\u27A1\uFE0F Next Image"):
-                    st.session_state.image_index = min(total - 1, current + 1)
-                    st.rerun()
-        else:
-            st.write("No image found.")
-
-        st.write(f"**Price:** {format_price(listing['price_text'])}")
-        st.write(f"**Booli estimate:** {format_price(listing['booli_price'])}")
-        st.write(f"**Living Area:** {listing['boarea']} m²")
-        st.write(f"**Rooms:** {listing['rum']}")
-        st.write(f"**Plot Size:** {listing['tomtstorlek']} m²")
-        st.write(f"**Year Built:** {listing['byggar']}")
-        st.write(f"[\U0001F517 View Listing]({listing['url']})")
-
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button("\U0001F44E Dislike", key="dislike"):
-                conn = connect_to_db()
-                if conn:
-                    mark_seen(conn, listing['url'], liked=False, user=st.session_state.user_name)
-                    conn.close()
-                    st.session_state.listing_index += 1
-                    st.session_state.image_index = 0
-                    st.rerun()
-        with col2:
-            if st.button("❤️ Like", key="like"):
-                conn = connect_to_db()
-                if conn:
-                    mark_seen(conn, listing['url'], liked=True, user=st.session_state.user_name)
-                    conn.close()
-                    st.session_state.listing_index += 1
-                    st.session_state.image_index = 0
-                    st.rerun()
-    else:
-        st.success("You've rated all listings! ✅")
-else:
-    st.info("Click 'Load Listings' to begin swiping.")
+            df_display = df.copy()
+            df_display["price_text"] = df_display["price_text"].apply(format_price)
+            df_display["booli_price"] = df_display["booli_price"].apply(format_price)
+            st.dataframe(
+                df_display[[
+                    "bostadstyp", "omrade", "price_text", "booli_price", "url"
+                ]],
+                column_config={"url": st.column_config.LinkColumn("url")},
+                use_container_width=True,
+                hide_index=True,
+            )
