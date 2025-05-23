@@ -134,6 +134,18 @@ def fetch_unrated_listings(connection, user):
         columns = [desc[0] for desc in cursor.description]
         return pd.DataFrame(rows, columns=columns)
 
+def fetch_seen_rated(connection):
+    with connection.cursor() as cursor:
+        cursor.execute(f"""
+            SELECT SUM(CASE WHEN rating_bae is null THEN 1 ELSE 0 END) as unrated_bae,
+            SUM(CASE WHEN rating_aleks is null THEN 1 ELSE 0 END) as unrated_aleks,
+            COUNT(*) as total
+            FROM real_estate_listings 
+        """)
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        return pd.DataFrame(rows, columns=columns)
+
 def mark_seen(connection, url, liked, user):
     rating = 10 if liked else 0
     column = "rating_bae" if user == "Cecilia" else "rating_aleks"
@@ -249,30 +261,51 @@ if "show_top_matches" not in st.session_state:
     st.session_state.show_top_matches = False
 if "show_swiping" not in st.session_state:
     st.session_state.show_swiping = True
+if "confirm_scrape" not in st.session_state:
+    st.session_state.confirm_scrape = False
 
 # -------------------- User Selection Page --------------------
 if not st.session_state.user_name:
+    connection = connect_to_db()
+    rated_df = fetch_seen_rated(connection)
     st.write("Who are you?")
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Cecilia"):
             st.session_state.user_name = "Cecilia"
             st.rerun()
+        st.info(f"Remaining listings: {rated_df.unrated_bae.iloc[0]}")
     with col2:
         if st.button("Aleksandar"):
             st.session_state.user_name = "Aleksandar"
             st.rerun()
+        st.info(f"Remaining listings: {rated_df.unrated_aleks.iloc[0]}")
     st.stop()
 
 # -------------------- Streamlit menu --------------------
 st.sidebar.title("Menu")
 if st.sidebar.button("Scrape new listings"):
-    pages = scrape_booli()
-    st.sidebar.success(f"Scraped listings from {pages} pages.")
+    st.session_state.confirm_scrape = True
 if st.sidebar.button("Top Matches ❤️🔥"):
     st.session_state.show_top_matches = True
     st.session_state.show_swiping = False
     st.rerun()
+
+# -------------------- Confirmation UI --------------------
+if st.session_state.confirm_scrape:
+    st.sidebar.warning("Are you sure you want to scrape new listings?")
+    col1, col2 = st.sidebar.columns(2)
+
+    with col1:
+        if st.button("Yes", key="confirm_yes"):
+            pages = scrape_booli()
+            st.sidebar.success(f"Scraped listings from {pages} pages.")
+            st.session_state.confirm_scrape = False
+
+    with col2:
+        if st.button("No", key="confirm_no"):
+            st.session_state.confirm_scrape = False
+            st.rerun()
 
 # -------------------- Swiping page --------------------
 if st.session_state.show_swiping:
