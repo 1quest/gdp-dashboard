@@ -208,7 +208,8 @@ def booli_scrape_objects(links):
 
             utgangspris = soup.find('span', class_='text-sm text-content-secondary mt-2')
             pattern = r'>([^<]+)<'
-            bostadstyp, omrade, stad = re.findall(pattern, str(utgangspris))[0].split(' · ')
+            parts = re.findall(pattern, str(utgangspris))[0].split(' · ')
+            bostadstyp, omrade, stad = (parts + [''] * 3)[:3]
 
             listing = RealEstateListing(booli_price, boarea, rum, biarea, tomtstorlek, byggar, price_text, bostadstyp,
                                         omrade, stad, price_text, url_loop)
