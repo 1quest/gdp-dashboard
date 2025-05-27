@@ -214,7 +214,7 @@ def booli_scrape_objects(links):
                                         omrade, stad, price_text, url_loop)
             listings.append(listing)
         except Exception as e:
-            os.write(str(links[j]))
+            st.write(str(links[j]))
 
 
     return listings
