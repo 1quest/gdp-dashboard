@@ -184,34 +184,38 @@ def booli_scrape_links(url, pages):
 def booli_scrape_objects(links):
     listings = []
     for j, row in enumerate(links):
-        url_loop = url_booli_home + links[j]
-        response = requests.get(url_loop)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'lxml')
-        print("URL: " + url_loop)
+        try:
+            url_loop = url_booli_home + links[j]
+            response = requests.get(url_loop)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'lxml')
+            print("URL: " + url_loop)
 
-        price_span = soup.find('span', class_='heading-2')
-        price_text = price_span.get_text(strip=True).replace(u'\xa0', u'').replace('kr', '') if price_span else None
+            price_span = soup.find('span', class_='heading-2')
+            price_text = price_span.get_text(strip=True).replace(u'\xa0', u'').replace('kr', '') if price_span else None
 
-        booli_price = soup.find('p', class_='heading-5 whitespace-nowrap first-letter:uppercase tabular-nums lining-nums')
-        booli_price = booli_price.get_text(strip=True).split(' ')[0].replace(u'\xa0', u'').replace('kr', '') if booli_price else None
+            booli_price = soup.find('p', class_='heading-5 whitespace-nowrap first-letter:uppercase tabular-nums lining-nums')
+            booli_price = booli_price.get_text(strip=True).split(' ')[0].replace(u'\xa0', u'').replace('kr', '') if booli_price else None
 
-        details_soup = soup.find('ul', class_='flex flex-wrap gap-y-4 gap-x-8 sm:gap-x-12 flex flex-wrap mt-6')
-        li_elements = details_soup.select('ul.flex > li')
+            details_soup = soup.find('ul', class_='flex flex-wrap gap-y-4 gap-x-8 sm:gap-x-12 flex flex-wrap mt-6')
+            li_elements = details_soup.select('ul.flex > li')
 
-        boarea = safe_extract(li_elements, 0, 'm²')
-        rum = safe_extract(li_elements, 1)
-        biarea = safe_extract(li_elements, 2, 'm²')
-        tomtstorlek = safe_extract(li_elements, 3, 'm²')
-        byggar = safe_extract(li_elements, 4)
+            boarea = safe_extract(li_elements, 0, 'm²')
+            rum = safe_extract(li_elements, 1)
+            biarea = safe_extract(li_elements, 2, 'm²')
+            tomtstorlek = safe_extract(li_elements, 3, 'm²')
+            byggar = safe_extract(li_elements, 4)
 
-        utgangspris = soup.find('span', class_='text-sm text-content-secondary mt-2')
-        pattern = r'>([^<]+)<'
-        bostadstyp, omrade, stad = re.findall(pattern, str(utgangspris))[0].split(' · ')
+            utgangspris = soup.find('span', class_='text-sm text-content-secondary mt-2')
+            pattern = r'>([^<]+)<'
+            bostadstyp, omrade, stad = re.findall(pattern, str(utgangspris))[0].split(' · ')
 
-        listing = RealEstateListing(booli_price, boarea, rum, biarea, tomtstorlek, byggar, price_text, bostadstyp,
-                                    omrade, stad, price_text, url_loop)
-        listings.append(listing)
+            listing = RealEstateListing(booli_price, boarea, rum, biarea, tomtstorlek, byggar, price_text, bostadstyp,
+                                        omrade, stad, price_text, url_loop)
+            listings.append(listing)
+        except Exception as e:
+            print(links[j])
+
 
     return listings
 
