@@ -381,16 +381,16 @@ if st.session_state.show_swiping:
 
             col1, col2 = st.columns(2)
             with col1:
-                button1 = st.button("\U0001F44E Dislike", key="dislike")
+                dislike_pressed = st.button("👎 Dislike", key="dislike")
             with col2:
-                button2 = st.button("❤️ Like", key="like")
+                like_pressed = st.button("❤️ Like", key="like")
         else:
             st.success("You've rated all listings! ✅")
     else:
         st.info("Click 'Load Listings' to begin swiping.")
 
-    # Button press #1
-    if st.button("\U0001F44E Dislike", key="dislike"):
+    # Handle button logic outside the layout
+    if dislike_pressed:
         conn = connect_to_db()
         if conn:
             mark_seen(conn, listing['url'], liked=False, user=st.session_state.user_name)
@@ -399,8 +399,7 @@ if st.session_state.show_swiping:
             st.session_state.image_index = 0
             st.rerun()
 
-    # Button press #2
-    if st.button("❤️ Like", key="like"):
+    if like_pressed:
         conn = connect_to_db()
         if conn:
             mark_seen(conn, listing['url'], liked=True, user=st.session_state.user_name)
