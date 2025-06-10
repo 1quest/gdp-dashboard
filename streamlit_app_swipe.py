@@ -388,7 +388,7 @@ if st.session_state.show_swiping:
                 gap: 10px;
                 justify-content: center;
                 margin-top: 1rem;
-                flex-wrap: wrap;  /* allow wrapping gracefully on small screens */
+                flex-wrap: nowrap !important; /* Prevent wrapping of columns */
             }
 
             .button-row > div {
