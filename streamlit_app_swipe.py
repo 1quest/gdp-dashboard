@@ -380,31 +380,13 @@ if st.session_state.show_swiping:
             st.write(f"**Year Built:** {listing['byggar']}")
             st.write(f"[\U0001F517 View Listing]({listing['url']})")
 
-            st.markdown("""
-            <style>
-            .button-row {
-                display: flex;
-                flex-direction: row;
-                gap: 10px;
-                justify-content: center;
-                margin-top: 1rem;
-                flex-wrap: nowrap !important; /* Prevent wrapping of columns */
-            }
-
-            .button-row > div {
-                flex: 1 1 45%;  /* allow shrinking, prefer 45% width */
-                min-width: 120px; /* ensures buttons don’t become unusable */
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            st.markdown('<div class="button-row">', unsafe_allow_html=True)
             # Buttons inside columns
             col1, col2 = st.columns(2)
             with col1:
                 dislike_pressed = st.button("👎 Dislike", key="dislike")
             with col2:
                 like_pressed = st.button("❤️ Like", key="like")
-            st.markdown('</div>', unsafe_allow_html=True)
+
             # Handle button presses outside layout
             if dislike_pressed:
                 conn = connect_to_db()
