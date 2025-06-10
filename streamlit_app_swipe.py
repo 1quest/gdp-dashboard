@@ -397,14 +397,14 @@ if st.session_state.show_swiping:
             }
             </style>
             """, unsafe_allow_html=True)
-
+            st.markdown('<div class="button-row">', unsafe_allow_html=True)
             # Buttons inside columns
             col1, col2 = st.columns(2)
             with col1:
                 dislike_pressed = st.button("👎 Dislike", key="dislike")
             with col2:
                 like_pressed = st.button("❤️ Like", key="like")
-
+            st.markdown('</div>', unsafe_allow_html=True)
             # Handle button presses outside layout
             if dislike_pressed:
                 conn = connect_to_db()
