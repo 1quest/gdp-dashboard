@@ -380,6 +380,16 @@ if st.session_state.show_swiping:
             st.write(f"**Year Built:** {listing['byggar']}")
             st.write(f"[\U0001F517 View Listing]({listing['url']})")
 
+            # Add CSS for keeping one row columns for buttons
+            st.write('''<style>
+
+            [data-testid="column"] {
+                width: calc(33.3333% - 1rem) !important;
+                flex: 1 1 calc(33.3333% - 1rem) !important;
+                min-width: calc(33% - 1rem) !important;
+            }
+            </style>''', unsafe_allow_html=True)
+
             # Buttons inside columns
             col1, col2 = st.columns(2)
             with col1:
