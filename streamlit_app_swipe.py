@@ -379,33 +379,9 @@ if st.session_state.show_swiping:
             st.write(f"**Year Built:** {listing['byggar']}")
             st.write(f"[\U0001F517 View Listing]({listing['url']})")
 
-            # Custom CSS to make buttons narrower and aligned horizontally on small screens
-            st.markdown("""
-                <style>
-                .button-container {
-                    display: flex;
-                    justify-content: space-between;
-                }
-                .button-container button {
-                    flex: 1;
-                    margin: 0 5px;
-                    min-width: 0;
-                    max-width: 100%;
-                }
-                @media (max-width: 480px) {
-                    .button-container {
-                        flex-direction: row;
-                    }
-                }
-                </style>
-            """, unsafe_allow_html=True)
-
-            # Place buttons inside a styled container
-            st.markdown('<div class="button-container">', unsafe_allow_html=True)
             col1, col2 = st.columns(2)
-
             with col1:
-                if st.button("\U0001F44E Dislike", key="dislike", use_container_width=True):
+                if st.button("\U0001F44E Dislike", key="dislike"):
                     conn = connect_to_db()
                     if conn:
                         mark_seen(conn, listing['url'], liked=False, user=st.session_state.user_name)
@@ -413,9 +389,8 @@ if st.session_state.show_swiping:
                         st.session_state.listing_index += 1
                         st.session_state.image_index = 0
                         st.rerun()
-
             with col2:
-                if st.button("❤️ Like", key="like", use_container_width=True):
+                if st.button("❤️ Like", key="like"):
                     conn = connect_to_db()
                     if conn:
                         mark_seen(conn, listing['url'], liked=True, user=st.session_state.user_name)
@@ -423,8 +398,6 @@ if st.session_state.show_swiping:
                         st.session_state.listing_index += 1
                         st.session_state.image_index = 0
                         st.rerun()
-
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.success("You've rated all listings! ✅")
     else:
