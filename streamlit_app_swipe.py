@@ -381,27 +381,33 @@ if st.session_state.show_swiping:
 
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("\U0001F44E Dislike", key="dislike"):
-                    conn = connect_to_db()
-                    if conn:
-                        mark_seen(conn, listing['url'], liked=False, user=st.session_state.user_name)
-                        conn.close()
-                        st.session_state.listing_index += 1
-                        st.session_state.image_index = 0
-                        st.rerun()
+                button1 = st.button("\U0001F44E Dislike", key="dislike")
             with col2:
-                if st.button("❤️ Like", key="like"):
-                    conn = connect_to_db()
-                    if conn:
-                        mark_seen(conn, listing['url'], liked=True, user=st.session_state.user_name)
-                        conn.close()
-                        st.session_state.listing_index += 1
-                        st.session_state.image_index = 0
-                        st.rerun()
+                button2 = st.button("❤️ Like", key="like")
         else:
             st.success("You've rated all listings! ✅")
     else:
         st.info("Click 'Load Listings' to begin swiping.")
+
+    # Button press #1
+    if st.button("\U0001F44E Dislike", key="dislike"):
+        conn = connect_to_db()
+        if conn:
+            mark_seen(conn, listing['url'], liked=False, user=st.session_state.user_name)
+            conn.close()
+            st.session_state.listing_index += 1
+            st.session_state.image_index = 0
+            st.rerun()
+
+    # Button press #2
+    if st.button("❤️ Like", key="like"):
+        conn = connect_to_db()
+        if conn:
+            mark_seen(conn, listing['url'], liked=True, user=st.session_state.user_name)
+            conn.close()
+            st.session_state.listing_index += 1
+            st.session_state.image_index = 0
+            st.rerun()
 # -------------------- Top Matches Page --------------------
 if st.session_state.show_top_matches:
     if st.button("🔙 Back to Listings"):
