@@ -405,8 +405,8 @@ if st.session_state.show_swiping:
                     st.session_state.listing_index += 1
                     st.session_state.image_index = 0
                     st.rerun()
-            else:
-                st.success("You've rated all listings! ✅")
+        else:
+            st.success("You've rated all listings! ✅")
     else:
         st.info("Click 'Load Listings' to begin swiping.")
 # -------------------- Top Matches Page --------------------
