@@ -371,6 +371,7 @@ if st.session_state.show_swiping:
             else:
                 st.write("No image found.")
 
+            # Show listing info...
             st.write(f"**Price:** {format_price(listing['price_text'])}")
             st.write(f"**Booli estimate:** {format_price(listing['booli_price'])}")
             st.write(f"**Living Area:** {listing['boarea']} m²")
@@ -379,34 +380,35 @@ if st.session_state.show_swiping:
             st.write(f"**Year Built:** {listing['byggar']}")
             st.write(f"[\U0001F517 View Listing]({listing['url']})")
 
+            # Buttons inside columns
             col1, col2 = st.columns(2)
             with col1:
                 dislike_pressed = st.button("👎 Dislike", key="dislike")
             with col2:
                 like_pressed = st.button("❤️ Like", key="like")
-        else:
-            st.success("You've rated all listings! ✅")
+
+            # Handle button presses outside layout
+            if dislike_pressed:
+                conn = connect_to_db()
+                if conn:
+                    mark_seen(conn, listing['url'], liked=False, user=st.session_state.user_name)
+                    conn.close()
+                    st.session_state.listing_index += 1
+                    st.session_state.image_index = 0
+                    st.rerun()
+
+            if like_pressed:
+                conn = connect_to_db()
+                if conn:
+                    mark_seen(conn, listing['url'], liked=True, user=st.session_state.user_name)
+                    conn.close()
+                    st.session_state.listing_index += 1
+                    st.session_state.image_index = 0
+                    st.rerun()
+            else:
+                st.success("You've rated all listings! ✅")
     else:
         st.info("Click 'Load Listings' to begin swiping.")
-
-    # Handle button logic outside the layout
-    if dislike_pressed:
-        conn = connect_to_db()
-        if conn:
-            mark_seen(conn, listing['url'], liked=False, user=st.session_state.user_name)
-            conn.close()
-            st.session_state.listing_index += 1
-            st.session_state.image_index = 0
-            st.rerun()
-
-    if like_pressed:
-        conn = connect_to_db()
-        if conn:
-            mark_seen(conn, listing['url'], liked=True, user=st.session_state.user_name)
-            conn.close()
-            st.session_state.listing_index += 1
-            st.session_state.image_index = 0
-            st.rerun()
 # -------------------- Top Matches Page --------------------
 if st.session_state.show_top_matches:
     if st.button("🔙 Back to Listings"):
