@@ -385,7 +385,7 @@ if st.session_state.show_swiping:
                 <style>
                 [data-testid="column"] {
                     flex: 0 0 auto !important; /* Prevent columns from resizing */
-                    width: calc(100% * var(--col-width)) !important; /* Fixed width based on proportions */
+                    width: calc(80% * var(--col-width)) !important; /* Fixed width based on proportions */
                 }
                 [data-testid="stHorizontalBlock"] {
                     display: flex !important;
