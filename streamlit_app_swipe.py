@@ -381,14 +381,22 @@ if st.session_state.show_swiping:
             st.write(f"[\U0001F517 View Listing]({listing['url']})")
 
             # Add CSS for keeping one row columns for buttons
-            st.write('''<style>
-
-            [data-testid="column"] {
-                width: calc(33.3333% - 1rem) !important;
-                flex: 1 1 calc(33.3333% - 1rem) !important;
-                min-width: calc(33% - 1rem) !important;
-            }
-            </style>''', unsafe_allow_html=True)
+            st.write('''
+                <style>
+                [data-testid="column"] {
+                    flex: 0 0 auto !important; /* Prevent columns from resizing */
+                    width: calc(100% * var(--col-width)) !important; /* Fixed width based on proportions */
+                }
+                [data-testid="stHorizontalBlock"] {
+                    display: flex !important;
+                    flex-wrap: nowrap !important; /* Prevent wrapping of columns */
+                    gap: 1rem; /* Spacing between columns */
+                }
+                body {
+                    overflow-x: auto !important; /* Allow horizontal scrolling if needed */
+                }
+                </style>
+                ''', unsafe_allow_html=True)
 
             # Buttons inside columns
             col1, col2 = st.columns(2)
