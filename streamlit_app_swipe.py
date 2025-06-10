@@ -414,7 +414,7 @@ if st.session_state.show_top_matches:
         with conn.cursor() as cursor:
             cursor.execute("""
                 SELECT booli_price, boarea, rum, biarea, tomtstorlek, byggar, utgangspris,
-                       bostadstyp, omrade, stad, price_text, url
+                       bostadstyp, omrade, stad, price_text, url, scrape_date
                 FROM real_estate_listings
                 WHERE rating_aleks = '10' AND rating_bae = '10'
                 ORDER BY scrape_date DESC
@@ -432,11 +432,15 @@ if st.session_state.show_top_matches:
             df_display = df.copy()
             df_display["price_text"] = df_display["price_text"].apply(format_price)
             df_display["booli_price"] = df_display["booli_price"].apply(format_price)
-            st.dataframe(
+            df_display = df_display.sort_values("scrape_date", ascending=False)
+
+            st.data_editor(
                 df_display[[
-                    "bostadstyp", "omrade", "price_text", "booli_price", "url"
+                    "scrape_date", "omrade", "price_text", "booli_price", "url"
                 ]],
-                column_config={"url": st.column_config.LinkColumn("url")},
+                column_config={
+                    "url": st.column_config.LinkColumn("Listing", disabled=True)
+                },
                 use_container_width=True,
                 hide_index=True,
             )
